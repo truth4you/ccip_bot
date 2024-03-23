@@ -35,47 +35,9 @@ async function sleep(seconds) {
 }
 
 async function main() {
-    const [deployer] = await ethers.getSigners()
+    const {SWAP_ROUTER_ADDRESS, SWAP_ROUTER_VERSION, CCIP_ADDRESS} = config[network.name]
 
-    const {UNISWAP_ADDRESS, CCIP_ADDRESS, USDC_ADDRESS, BnM_ADDRESS, LnM_ADDRESS} = config[network.name]
-
-    // const UniswapRouter = await ethers.getContractAt(
-    //     "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol:IUniswapV2Router02", 
-    //     UNISWAP_ADDRESS
-    // )
-    // const USDC = await ethers.getContractAt(
-    //     "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-    //     USDC_ADDRESS
-    // )
-    // const BnM = await ethers.getContractAt(
-    //     "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-    //     BnM_ADDRESS
-    // )
-    // const LnM = await ethers.getContractAt(
-    //     "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-    //     LnM_ADDRESS
-    // )
-    // await (await USDC.approve(UniswapRouter.address, ethers.utils.parseEther('1000000000'))).wait()
-    // await (await UniswapRouter.addLiquidityETH(
-    //     USDC.address,
-    //     ethers.utils.parseEther('3'),
-    //     0,
-    //     0,
-    //     deployer.address,
-    //     '999999999999999',
-    //     { value: ethers.utils.parseEther('0.5') }
-    // )).wait()
-    // await (await BnM.approve(UniswapRouter.address, ethers.utils.parseEther('1000000000'))).wait()
-    // await (await UniswapRouter.addLiquidityETH(
-    //     BnM.address,
-    //     ethers.utils.parseEther('5'),
-    //     0,
-    //     0,
-    //     deployer.address,
-    //     '999999999999999',
-    //     { value: ethers.utils.parseEther('2') }
-    // )).wait()
-    const args = [CCIP_ADDRESS, UNISWAP_ADDRESS, 2]
+    const args = [CCIP_ADDRESS, SWAP_ROUTER_ADDRESS, SWAP_ROUTER_VERSION]
     const Mixer = await deploy("contracts/Mixer.sol:Mixer", ...args)
     config[network.name].MIXER_ADDRESS = Mixer.address
     writeFileSync('./config.json', JSON.stringify(config, undefined, 4))

@@ -26,9 +26,9 @@ async function sleep(seconds) {
 }
 
 async function main() {
-    const {UNISWAP_ADDRESS, CCIP_ADDRESS, MIXER_ADDRESS} = config[network.name]
+    const {SWAP_ROUTER_ADDRESS, CCIP_ADDRESS, MIXER_ADDRESS} = config[network.name]
 
-    await verify(MIXER_ADDRESS, [CCIP_ADDRESS, UNISWAP_ADDRESS, 2], "contracts/Mixer.sol:Mixer")
+    await verify(MIXER_ADDRESS, [CCIP_ADDRESS, SWAP_ROUTER_ADDRESS, 2], "contracts/Mixer.sol:Mixer")
 }
 
 main()
