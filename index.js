@@ -9,6 +9,7 @@ const { CHAINS, CHAIN_SEPOLIA, CHAIN_BASE_SEPOLIA } = require("./config")
 const { existsSync, readFileSync, writeFileSync } = require("node:fs")
 require('dotenv').config()
 
+const isTestnet = process.argv[2]=='testnet'
 const chatHistory = []
 
 class FileSessionStorage extends MemorySessionStorage {
@@ -304,19 +305,20 @@ const menuMain = new Menu('menu-main', { onMenuOutdated })
     .dynamic((ctx, range) => {
         if(!ctx.session.settings.wallet) {
             range.text(ctx.session.temp.prompt && ctx.session.temp.prompt.dataType=="private-key" ? "🔌 Connecting..." : "🔌 Connect Wallet", async (ctx) => {
-                ctx.session.settings.wallet = new ethers.Wallet(process.env.DEPLOYER_KEY)
-                showMain(ctx)
-                // const keyboard = new Keyboard()
-                //     .text("Cancel", (ctx) => {
-                //         ctx.session.temp.prompt = undefined
-                //         ctx.api.deleteMessage(ctx.chat.id, ctx.update.message.message_id).catch(() => {})
-                //     })
-                //     .placeholder("Private key (eg, 0x008e099f4163810b4567186c0d8dd847eb75f01a1c527edcf684ebf019986a81)")
-                //     .oneTime()
-                //     await ctx.menu.update()
-                // const prompt = await ctx.reply("Input private key to connect", { reply_markup: keyboard })
-                // prompt.dataType = "private-key"
-                // ctx.session.temp.prompt = prompt
+                // ctx.session.settings.wallet = new ethers.Wallet(process.env.DEPLOYER_KEY)
+                // showMain(ctx)
+                const keyboard = new Keyboard()
+                    .text("Cancel", (ctx) => {
+                        ctx.session.temp.prompt = undefined
+                        ctx.api.deleteMessage(ctx.chat.id, ctx.update.message.message_id).catch(() => {})
+                    })
+                    .placeholder("Private key (eg, 0x008e099f4163810b4567186c0d8dd847eb75f01a1c527edcf684ebf019986a81)")
+                    .oneTime()
+                    await ctx.menu.update()
+                const prompt = await ctx.reply("Input private key to connect", { reply_markup: keyboard })
+                prompt.dataType = "private-key"
+                ctx.session.temp.prompt = prompt
+                chatHistory.push([ctx.chat.id, prompt.message_id])
             })
         } else {
             range
@@ -473,7 +475,7 @@ const menuTransfer = new Menu("menu-transfer", { onMenuOutdated })
 const menuSrcChains = new Menu("submenu-source-chains", { onMenuOutdated })
     .dynamic((ctx, range) => {
         let count = 1
-        for(const id in CHAINS) {
+        for(const id in CHAINS.filter(chain => !!chain.testnet==isTestnet)) {
             range.text(`${ctx.session.settings.srcChainId==id ? '🟡' : '⚪'} ${CHAINS[id].name}`, (ctx) => {
                 if(ctx.session.settings.dstChainId==id)
                     ctx.session.settings.dstChainId = ctx.session.settings.srcChainId
@@ -492,7 +494,7 @@ const menuSrcChains = new Menu("submenu-source-chains", { onMenuOutdated })
 const menuDstChains = new Menu("submenu-destination-chains", { onMenuOutdated })
     .dynamic((ctx, range) => {
         let count = 1
-        for(const id in CHAINS) {
+        for(const id in CHAINS.filter(chain => !!chain.testnet==isTestnet)) {
             if(id!=ctx.session.settings.srcChainId) {
                 range.text(`${ctx.session.settings.dstChainId==id ? '🟡' : '⚪'} ${CHAINS[id].name}`, (ctx) => {
                     ctx.session.settings.dstChainId = id

@@ -8,6 +8,7 @@ const CHAINS = {
         id: 11155111,
         name: 'Sepolia',
         url: 'https://rpc.ankr.com/eth_sepolia',
+        testnet: true,
         mixer: '0x0866027A11f68e2Cc57326d01F5827Bb6e8001a8',
         tokens: [
             { symbol: 'ETH', native: true, decimals: 18 },
@@ -24,6 +25,7 @@ const CHAINS = {
         id: 84532,
         name: 'Base Sepolia',
         url: 'https://base-sepolia.publicnode.com',
+        testnet: true,
         mixer: '0x4D321e44e57bEd781f96936413BBcD54c8f5d255',
         tokens: [
             { symbol: 'ETH', native: true, decimals: 18 },
@@ -41,6 +43,7 @@ const CHAINS = {
         name: 'Avalanche Fuji',
         url: 'https://api.avax-test.network/ext/bc/C/rpc',
         mixer: '0x4bD4687e7cCc56C62A5a2AeC1a201b32492D1b04',
+        testnet: true,
         tokens: [
             { symbol: 'AVAX', native: true, decimals: 18 },
             { symbol: 'CCIP-BnM', address: '0xD21341536c5cF5EB1bcb58f6723cE26e8D8E90e4', decimals: 18, limit: 100_000 },
