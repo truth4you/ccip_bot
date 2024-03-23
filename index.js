@@ -36,13 +36,12 @@ class FileSessionStorage extends MemorySessionStorage {
 }
 
 const initSettings = () => {
-    console.log('initSettings', initSettings)
     return {
         srcChainId: CHAIN_SEPOLIA,
         dstChainId: CHAIN_BASE_SEPOLIA,
         token: 'ETH',
         amount: '0.01',
-        recipient: '0x20f72Dcf9141e1b6014C835B6d0709E32d806F10',
+        recipient: undefined,
     }
 }
 
@@ -293,6 +292,7 @@ const handleMix = async (ctx) => {
 
 const onMenuOutdated = async (ctx) => {
     ctx.session.settings.wallet = undefined
+    ctx.session.settings.recipient = undefined
     if(!ctx.session.temp.main || ctx.session.temp.main.message_id!=ctx.update.callback_query.message.message_id) {
         ctx.answerCallbackQuery().catch(() => {})
         ctx.session.temp.main = ctx.update.callback_query.message
@@ -334,6 +334,7 @@ const menuMain = new Menu('menu-main', { onMenuOutdated })
                 .row()
                 .text("🔌 Disconnect", async (ctx) => {
                     ctx.session.settings.wallet = undefined
+                    ctx.session.settings.recipient = undefined
                     showMain(ctx)
                 })
         }
@@ -531,6 +532,7 @@ bot.use((ctx, next) => {
     ctx.session.temp.timeout = setTimeout(() => {
         if(ctx.session.settings.wallet) {
             ctx.session.settings.wallet = undefined
+            ctx.session.settings.recipient = undefined
             if(ctx.session.temp.prompt) {
                 ctx.api.deleteMessage(ctx.chat.id, ctx.session.temp.prompt.message_id)
                 ctx.session.temp.prompt = undefined
@@ -570,7 +572,9 @@ bot.on('message', async (ctx) => {
     if(prompt && prompt.dataType=="private-key") {
         const pkey = ctx.update.message.text
         if(/^(0x)?[\da-fA-F]{64}$/.test(pkey)) {
-            ctx.session.settings.wallet = new ethers.Wallet(pkey)
+            const wallet = new ethers.Wallet(pkey)
+            ctx.session.settings.wallet = wallet
+            ctx.session.settings.recipient = wallet.publicKey
         }
         ctx.session.temp.prompt = undefined
         showMain(ctx)
