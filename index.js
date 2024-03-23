@@ -475,7 +475,9 @@ const menuTransfer = new Menu("menu-transfer", { onMenuOutdated })
 const menuSrcChains = new Menu("submenu-source-chains", { onMenuOutdated })
     .dynamic((ctx, range) => {
         let count = 1
-        for(const id in CHAINS.filter(chain => !!chain.testnet==isTestnet)) {
+        for(const id in CHAINS) {
+            if(!!CHAINS[id].testnet!=isTestnet)
+                continue
             range.text(`${ctx.session.settings.srcChainId==id ? '🟡' : '⚪'} ${CHAINS[id].name}`, (ctx) => {
                 if(ctx.session.settings.dstChainId==id)
                     ctx.session.settings.dstChainId = ctx.session.settings.srcChainId
@@ -494,7 +496,9 @@ const menuSrcChains = new Menu("submenu-source-chains", { onMenuOutdated })
 const menuDstChains = new Menu("submenu-destination-chains", { onMenuOutdated })
     .dynamic((ctx, range) => {
         let count = 1
-        for(const id in CHAINS.filter(chain => !!chain.testnet==isTestnet)) {
+        for(const id in CHAINS) {
+            if(!!CHAINS[id].testnet!=isTestnet)
+                continue
             if(id!=ctx.session.settings.srcChainId) {
                 range.text(`${ctx.session.settings.dstChainId==id ? '🟡' : '⚪'} ${CHAINS[id].name}`, (ctx) => {
                     ctx.session.settings.dstChainId = id
