@@ -1,0 +1,3 @@
+{
+    "watch": ["index.js", "config.js", "workers/*.js"]
+}

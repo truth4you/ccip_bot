@@ -1,0 +1,33 @@
+{
+  "name": "ccip_bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@grammyjs/conversations": "^1.2.0",
+    "@grammyjs/hydrate": "^1.4.1",
+    "@grammyjs/menu": "^1.2.1",
+    "@grammyjs/storage-free": "^2.4.2",
+    "dotenv": "^16.4.5",
+    "ethers": "^5.7.2",
+    "grammy": "^1.21.1"
+  },
+  "devDependencies": {
+    "@chainlink/contracts-ccip": "^1.2.1",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@openzeppelin/contracts": "^5.0.2",
+    "@traderjoe-xyz/core": "^2.4.6",
+    "@uniswap/universal-router": "^1.6.0",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@uniswap/v3-periphery": "^1.4.4",
+    "hardhat": "^2.11.2",
+    "solmate": "^6.2.0"
+  }
+}
