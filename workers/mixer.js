@@ -28,7 +28,6 @@ const schedule = async () => {
         const EVENT_SENT = '0xe7ec12acc6c8756a0ff8430f1b8f176852d6ef9ac30d00bfde04936c6d998b0b'
         let tx = undefined
         if(isNative) {
-            console.log(ethBalance.toString(), tokenBalance.toString())
             if(tokenBalance.lt(value.add(ccipFee).add(platformFee)))
                 throw Error('Insufficient balance')
             tx = await mixerContract.ccipSend(
@@ -73,7 +72,6 @@ const schedule = async () => {
         } else
             throw Error("Reverted")
     } catch(ex) {
-        console.log(ex)
         parentPort.postMessage({
             id,
             event: 'error',

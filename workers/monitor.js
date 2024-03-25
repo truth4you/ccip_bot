@@ -6,7 +6,6 @@ const { id, dstChain, sentAt } = workerData
 
 const schedule = async () => {
     try {
-        console.log('network', dstChain.url, dstChain.id)
         const dstProvider = new ethers.providers.JsonRpcProvider(dstChain.url, dstChain.id)
         const mixerContract = new ethers.Contract(dstChain.mixer, abiMixer, dstProvider)
         const filter = mixerContract.filters.TokenReceived(id)
@@ -21,7 +20,6 @@ const schedule = async () => {
         const timer = setInterval(async () => {
             const block = await dstProvider.getBlock(lastBlock)
             if(block.timestamp * 1000 > sentAt) {
-                console.log('block', id, block.number - 4000, block.number)
                 lastBlock = block.number - 300
                 const events = await mixerContract.queryFilter(
                     filter, lastBlock, block.number
@@ -44,7 +42,6 @@ const schedule = async () => {
             })
         }, 30 * 1000)
     } catch(ex) {
-        console.log(ex)
         parentPort.postMessage({
             id,
             event: 'error',

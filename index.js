@@ -74,29 +74,6 @@ const fileSession = async (ctx, next) => {
     }
 }
 
-const showMain = async (ctx) => {
-    const text = [
-        "🙌 Welcome CCIP Bridge\\!",
-        "",
-        ctx.session.settings.wallet ? `💰 \`${ctx.session.settings.wallet.address}\`` : undefined,
-    ].filter(item => item!==undefined).join('\n')
-    const message = (ctx.update.message ?? ctx.update.callback_query.message)
-    if(ctx.session.temp.main && ctx.session.temp.main.message_id!=message.message_id) {
-        ctx.api.deleteMessage(ctx.chat.id, ctx.session.temp.main.message_id).catch(() => {})
-        if(ctx.session.temp.main.from.id==message.from.id)
-            ctx.session.temp.main = message
-        else
-            ctx.session.temp.main = undefined
-        chatHistory.push([ctx.chat.id, message.message_id])
-    }
-    if(ctx.session.temp.main)
-        await ctx.api.editMessageText(ctx.chat.id, ctx.session.temp.main.message_id, text, { reply_markup: menuMain, parse_mode: "MarkdownV2" }).catch(() => {})
-    else
-        ctx.session.temp.main = await ctx.reply(text, { reply_markup: menuMain, parse_mode: "MarkdownV2" }).catch(() => {})
-
-    ctx.session.temp.main.uiClass = 'main'
-}
-
 const formatElasped = (time) => {
     // const secs = Math.floor((Date.now() - time) / 1000)
     // return secs
@@ -112,28 +89,61 @@ const formatElasped = (time) => {
     return `${days} day${days==1 ? '' : 's'}`
 }
 
-const showTransfer = async (ctx) => {
-    const { id, srcChainId, dstChainId, token, amount, recipient, sentAt, state } = ctx.session.settings.tx && ctx.session.settings.tx.id ? ctx.session.settings.tx : ctx.session.settings
-    const elapsed = !!sentAt && formatElasped(sentAt)
-    const text = [
-        "💼 Transfer",
-        "",
-        srcChainId ? `✅ Source Chain: ${CHAINS[srcChainId].name}` : '❌ Source Chain: Not set',
-        dstChainId ? `✅ Destination Chain: ${CHAINS[dstChainId].name}` : '❌ Source Chain: Not set',
-        token && srcChainId && dstChainId ? `✅ Token: ${token}` : '❌ Token: Not set',
-        amount ? `✅ Amount: ${amount}` : '❌ Amount: Not set',
-        recipient ? `✅ Recipient: ${recipient}` : '❌ Recipient: Not set',
-        "",
-        id ? `${state==2 ? '🟢 Success' : state==3 ? '🔴 Failed' : `🟡 Waiting for finality (${elapsed ? `${elapsed} ago` : 'just before'})` }` : ctx.session.settings.tx ? '⚪ Preparing transaction' : undefined,
-    ].filter(item => item!==undefined).join('\n')
+const escapeMarkdown = (text) => {
+    return text.replace(/([\.\+\-\|\(\)\#\_\[\]\~\=\{\}\,\!\`])/g, "\\$1")
+}
+
+const showWindow = async (ctx, text, menu) => {
     const message = (ctx.update.message ?? ctx.update.callback_query.message)
     if(ctx.session.temp.main && ctx.session.temp.main.message_id!=message.message_id) {
-        ctx.api.deleteMessage(ctx.chat.id, ctx.session.temp.main.message_id)
-        chatHistory.push([ctx.chat.id, message.message_id])
+        if(!message.uiClass)
+            ctx.api.deleteMessage(ctx.chat.id, message.message_id).catch(() => {})
+        else {
+            ctx.api.deleteMessage(ctx.chat.id, ctx.session.temp.main.message_id).catch(() => {})
+            if(ctx.session.temp.main.from.id==message.from.id)
+                ctx.session.temp.main = message
+            else
+                ctx.session.temp.main = undefined
+            chatHistory.push([ctx.chat.id, message.message_id])
+        }
+    } else if(message.uiClass) {
+        ctx.session.temp.main = message
     }
-    ctx.session.temp.main = message
+    if(ctx.session.temp.main)
+        await ctx.api.editMessageText(ctx.chat.id, ctx.session.temp.main.message_id, text, { reply_markup: menu, parse_mode: "MarkdownV2" }).catch(() => {})
+    else
+        ctx.session.temp.main = await ctx.reply(text, { reply_markup: menu, parse_mode: "MarkdownV2" }).catch(() => {})
+}
+
+const showMain = async (ctx) => {
+    const text = [
+        "🙌 Welcome CCIP Bridge\\!",
+        "",
+        ctx.session.settings.wallet ? `💰 \`${ctx.session.settings.wallet.address}\`` : undefined,
+    ].filter(item => item!==undefined).join('\n')
+
+    await showWindow(ctx, text, menuMain)
+    ctx.session.temp.main.uiClass = 'main'
+}
+
+const showTransfer = async (ctx) => {
     if(ctx.session.settings.wallet) {
-        await ctx.api.editMessageText(ctx.chat.id, message.message_id, text, { reply_markup: menuTransfer }).catch(() => { })
+        const { id, srcChainId, dstChainId, token, amount, recipient, sentAt, state } = ctx.session.settings.tx && ctx.session.settings.tx.id ? ctx.session.settings.tx : ctx.session.settings
+        const elapsed = !!sentAt && formatElasped(sentAt)
+        const text = [
+            "💼 Transfer",
+            "",
+            srcChainId ? `✅ Source Chain: ${CHAINS[srcChainId].name}` : '❌ Source Chain: Not set',
+            dstChainId ? `✅ Destination Chain: ${CHAINS[dstChainId].name}` : '❌ Source Chain: Not set',
+            token && srcChainId && dstChainId ? `✅ Token: ${token}` : '❌ Token: Not set',
+            amount ? `✅ Amount: ${amount}` : '❌ Amount: Not set',
+            recipient ? `✅ Recipient: ${recipient}` : '❌ Recipient: Not set',
+            "",
+            id ? `${state==2 ? '🟢 Success' : state==3 ? '🔴 Failed' : `🟡 Waiting for finality (${elapsed ? `${elapsed} ago` : 'just before'})` }` : ctx.session.settings.tx ? '⚪ Preparing transaction' : undefined,
+        ].filter(item => item!==undefined).join('\n')
+    
+        await showWindow(ctx, escapeMarkdown(text), menuTransfer)
+    
         if(id && state==1 && ctx.session.temp.main.uiClass != 'transfer') {
             threadReceive(ctx, id)
         }
@@ -148,15 +158,9 @@ const showTransfer = async (ctx) => {
 
 const showTransactions = async (ctx) => {
     // const { pending, transactions } = ctx.session.history
-    const text = "💼 Transactions"
-    const message = (ctx.update.message ?? ctx.update.callback_query.message)
-    if(ctx.session.temp.main && ctx.session.temp.main.message_id!=message.message_id) {
-        ctx.api.deleteMessage(ctx.chat.id, ctx.session.temp.main.message_id)
-        chatHistory.push([ctx.chat.id, message.message_id])
-    }
-    ctx.session.temp.main = message
     if(ctx.session.settings.wallet) {
-        await ctx.api.editMessageText(ctx.chat.id, ctx.session.temp.main.message_id, text, { reply_markup: menuTransactions }).catch((e) => { })
+        const text = "💼 Transactions"
+        await showWindow(ctx, text, menuTransactions)
         ctx.session.temp.main.uiClass = 'transactions'
         ctx.session.history.pending.map(tx => threadReceive(ctx, tx.id))
     } else
@@ -249,7 +253,7 @@ const threadReceive = async (ctx, id) => {
             else
                 showMessage(ctx, "Successfully committed")
         } else if(event=='update') {
-            console.log('update elapsed', id, ctx.session.temp.main.uiId, ctx.session.temp.main.uiClass)
+            // console.log('update elapsed', id, ctx.session.temp.main.uiId, ctx.session.temp.main.uiClass)
             if(ctx.session.temp.main.uiId==id && ctx.session.temp.main.uiClass=="transfer")
                 showTransfer(ctx)
             else if(ctx.session.temp.main.uiClass=="transactions")
@@ -574,29 +578,30 @@ bot.on('message', async (ctx) => {
         if(/^(0x)?[\da-fA-F]{64}$/.test(pkey)) {
             const wallet = new ethers.Wallet(pkey)
             ctx.session.settings.wallet = wallet
-            ctx.session.settings.recipient = wallet.publicKey
+            ctx.session.settings.recipient = wallet.address
         }
         ctx.session.temp.prompt = undefined
-        showMain(ctx)
         ctx.api.deleteMessage(ctx.chat.id, prompt.message_id).catch(() => {})
         ctx.api.deleteMessage(ctx.chat.id, ctx.update.message.message_id).catch(() => {})
+        showMain(ctx)
     } else if(prompt && prompt.dataType=="amount") {
         const amount = ctx.update.message.text
         if(Number(amount)) {
             ctx.session.settings.amount = amount
         }
         ctx.session.temp.prompt = undefined
-        showTransfer(ctx)
         ctx.api.deleteMessage(ctx.chat.id, prompt.message_id).catch(() => {})
         ctx.api.deleteMessage(ctx.chat.id, ctx.update.message.message_id).catch(() => {})
+        showTransfer(ctx)
     } else if(prompt && prompt.dataType=="recipient") {
         const recipient = ctx.update.message.text
         if(/^0x[\da-fA-F]{40}$/.test(recipient)) {
             ctx.session.settings.recipient = recipient
         }
         ctx.session.temp.prompt = undefined
-        showTransfer(ctx)
         ctx.api.deleteMessage(ctx.chat.id, prompt.message_id).catch(() => {})
+        ctx.api.deleteMessage(ctx.chat.id, ctx.update.message.message_id).catch(() => {})
+        showTransfer(ctx)
     } else {
         ctx.api.deleteMessage(ctx.chat.id, ctx.update.message.message_id).catch(() => {})
     }
@@ -612,7 +617,6 @@ bot.on('message', async (ctx) => {
 
 bot.start({
     onStart: (botInfo) => {
-        console.log(botInfo)
         // bot.api.setMyCommands([
         //     { command: "menu", description: "Show main menu" },
         //     { command: "social", description: "Open social tracker" },
@@ -626,14 +630,12 @@ bot.start({
 })
 
 process.once('SIGINT', async () => {
-    console.log('stop.int')
     // for(const [cid, mid] of chatHistory) {
     //     bot.api.deleteMessage(cid, mid).catch(() => {})
     // }
     bot.stop('SIGINT')
 })
 process.once('SIGTERM', async () => {
-    console.log('stop.term')
     // for(const [cid, mid] of chatHistory) {
     //     bot.api.deleteMessage(cid, mid).catch(() => {})
     // }
